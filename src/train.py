@@ -14,7 +14,13 @@ from src.evaluate import (
     plot_predictions,
     upsert_result,
 )
-from src.features import WINDOW, prepare_univariate
+from src.features import (
+    FEATURES,
+    TRAIN_FRACTION,
+    WINDOW,
+    prepare_multivariate,
+    prepare_univariate,
+)
 from src.models import build_lstm, build_rnn, set_seeds
 
 MODELS_DIR = ROOT / "models"
@@ -28,7 +34,7 @@ def main() -> None:
     """Run the selected model end to end and persist its metrics and artifacts."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--model", choices=["rnn", "lstm"], default="rnn", help="model to train"
+        "--model", choices=["rnn", "lstm", "multi"], default="rnn", help="model to train"
     )
     args = parser.parse_args()
 
@@ -45,7 +51,13 @@ def main() -> None:
             label = "LSTM"
         name = args.model
         scaler = prepared["scaler"]
-    else:  # pragma: no cover - more choices are added in later phases
+    elif args.model == "multi":
+        split_date = frame.index[int(len(frame) * TRAIN_FRACTION)]
+        prepared = prepare_multivariate(frame, split_date=split_date)
+        model = build_lstm(WINDOW, n_features=len(FEATURES))
+        name, label = "multi", "Multivariate LSTM"
+        scaler = prepared["target_scaler"]
+    else:  # pragma: no cover
         raise ValueError(f"Unsupported model: {args.model}")
 
     early_stop = EarlyStopping(

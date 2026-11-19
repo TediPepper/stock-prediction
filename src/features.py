@@ -121,6 +121,10 @@ def prepare_multivariate(
     X, y = make_windows_multi(X_all, y_all, window)
     split_w = split_idx - window
 
+    # The final window targets a day beyond the indicator dataframe, so take
+    # target dates from the original frame to keep them aligned with y.
+    target_dates = frame.index[len(frame) - len(y) :]
+
     return {
         "X_train": X[:split_w],
         "y_train": y[:split_w],
@@ -129,9 +133,9 @@ def prepare_multivariate(
         "feature_scaler": feat_scaler,
         "target_scaler": target_scaler,
         "split_idx": split_idx,
-        "train_target_end": featured.index[split_idx - 1],
-        "test_target_start": featured.index[split_idx],
-        "test_dates": featured.index[split_idx:],
+        "train_target_end": target_dates[split_w - 1],
+        "test_target_start": target_dates[split_w],
+        "test_dates": target_dates[split_w:],
     }
 
 
