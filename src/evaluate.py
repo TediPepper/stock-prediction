@@ -89,3 +89,50 @@ def upsert_result(row: dict, path: Path = REPORTS_DIR / "results.csv") -> Path:
     table = table[METRIC_COLUMNS]
     table.to_csv(path, index=False)
     return path
+
+
+def compare_results(
+    path: Path = REPORTS_DIR / "results.csv", reports_dir: Path = REPORTS_DIR
+) -> pd.DataFrame:
+    """Print the results table and save the comparison chart and Markdown table."""
+    table = pd.read_csv(path)
+    print(table.round(2).to_string(index=False))
+
+    for column in ("RMSE", "MAE", "MAPE"):
+        winner = table.loc[table[column].idxmin(), "Model"]
+        print(f"best {column}: {winner}")
+    winner = table.loc[table["DirectionalAccuracy"].idxmax(), "Model"]
+    print(f"best DirectionalAccuracy: {winner}")
+
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(10, 4))
+    positions = np.arange(len(table))
+    width = 0.35
+    ax.bar(positions - width / 2, table["RMSE"], width, label="RMSE")
+    ax.bar(positions + width / 2, table["MAE"], width, label="MAE")
+    ax.set_xticks(positions)
+    ax.set_xticklabels(table["Model"], rotation=15, ha="right")
+    ax.set_ylabel("Close price error (USD)")
+    ax.set_title("Model comparison on the same test period")
+    ax.legend()
+    fig.tight_layout()
+    chart_path = reports_dir / "model_comparison.png"
+    fig.savefig(chart_path, dpi=120)
+    plt.close(fig)
+
+    markdown = ["| Model | RMSE | MAE | MAPE | Directional accuracy |",
+                "| --- | ---: | ---: | ---: | ---: |"]
+    for row in table.itertuples(index=False):
+        markdown.append(
+            f"| {row.Model} | {row.RMSE:.2f} | {row.MAE:.2f} | "
+            f"{row.MAPE:.2f}% | {row.DirectionalAccuracy:.2f}% |"
+        )
+    markdown_path = reports_dir / "comparison.md"
+    markdown_path.write_text("\n".join(markdown) + "\n", encoding="utf-8")
+    print(f"saved: {chart_path.relative_to(REPORTS_DIR.parent)}")
+    print(f"saved: {markdown_path.relative_to(REPORTS_DIR.parent)}")
+    return table
+
+
+if __name__ == "__main__":
+    compare_results()
