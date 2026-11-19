@@ -1,0 +1,13 @@
+# Local Python runtime and virtual environments
+.python/
+venv/
+docs/venv/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+
+# Generated data and model binaries (code and results table are tracked)
+data/*.csv
+models/*.keras
+reports/*.png
