@@ -15,7 +15,7 @@ from src.evaluate import (
     upsert_result,
 )
 from src.features import WINDOW, prepare_univariate
-from src.models import build_rnn, set_seeds
+from src.models import build_lstm, build_rnn, set_seeds
 
 MODELS_DIR = ROOT / "models"
 EPOCHS = 100
@@ -28,17 +28,22 @@ def main() -> None:
     """Run the selected model end to end and persist its metrics and artifacts."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--model", choices=["rnn"], default="rnn", help="model to train"
+        "--model", choices=["rnn", "lstm"], default="rnn", help="model to train"
     )
     args = parser.parse_args()
 
     set_seeds()
     frame = load_prices()
 
-    if args.model == "rnn":
+    if args.model in ("rnn", "lstm"):
         prepared = prepare_univariate(frame)
-        model = build_rnn(WINDOW, n_features=1)
-        name, label = "rnn", "SimpleRNN"
+        if args.model == "rnn":
+            model = build_rnn(WINDOW, n_features=1)
+            label = "SimpleRNN"
+        else:
+            model = build_lstm(WINDOW, n_features=1)
+            label = "LSTM"
+        name = args.model
         scaler = prepared["scaler"]
     else:  # pragma: no cover - more choices are added in later phases
         raise ValueError(f"Unsupported model: {args.model}")
