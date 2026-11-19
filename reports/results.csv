@@ -1,0 +1,3 @@
+Model,RMSE,MAE,MAPE,DirectionalAccuracy
+SimpleRNN,19.2558,14.1952,5.2606,48.7248
+Naive baseline,3.9383,2.7017,1.1445,49.8656
